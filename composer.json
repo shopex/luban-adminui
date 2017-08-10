@@ -1,0 +1,21 @@
+{
+  "name": "shopex/adminui",
+  "type" : "library",
+  "description": "shopex luban desktop adminui.",
+  "keywords": ["shopex","luban", "adminui"],
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "wanglei",
+      "email": "wanglei@shopex.cn"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Shopex\\AdminUi\\": "src"
+    }
+  },  
+  "require": {
+    "php": ">=5.5.0"
+  }
+}
