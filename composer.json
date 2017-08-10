@@ -17,5 +17,15 @@
   },  
   "require": {
     "php": ">=5.5.0"
+  },
+  "scripts": {
+      "post-install-cmd": [
+          "Illuminate\\Foundation\\ComposerScripts::postInstall",
+          "php vendor:publish --force"
+      ],
+      "post-update-cmd": [
+          "Illuminate\\Foundation\\ComposerScripts::postUpdate",
+          "php vendor:publish --force"
+      ]
   }
 }
