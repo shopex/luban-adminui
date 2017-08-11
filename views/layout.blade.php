@@ -12,7 +12,7 @@
   </head>
 <body>
 
-	<nav class="navbar navbar-default navbar-fixed-top">
+	<nav class="navbar navbar-default navbar-fixed-top" id="app-header">
 	  <div class="container">
 	    <div class="navbar-header">
 	      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
@@ -21,10 +21,13 @@
 	        <span class="icon-bar"></span>
 	        <span class="icon-bar"></span>
 	      </button>
-	      <a class="navbar-brand" href="#">{{$app_name}}</a>
+	      <span class="navbar-brand">{{$app_name}}</span>
 	    </div>
 	    <div id="navbar" class="navbar-collapse collapse">
 	      <ul class="nav navbar-nav hide-in-search">
+	      @if (Auth::guest())
+	      	@else
+
 	      	@foreach ($app_menus as $menu)
 	      	@if (isset($menu['items']) && count($menu['items']) > 0)
 	        <li class="dropdown">
@@ -53,85 +56,86 @@
 			<li><a href="{{ url($menu['link']) }}">{{$menu['label']}}</a></li>	        
 	        @endif
 			@endforeach
+
+	        @endif
 	      </ul>
 
 	      <ul class="nav navbar-nav navbar-right">
-	        <li><a href="#">
-	        	<i class="glyphicon glyphicon-log-out"></i>
-	        退出</a></li>
-	      </ul>
+            @if (Auth::guest())
+                <li><a href="{{ route('login') }}">Login</a></li>
+                <li><a href="{{ route('register') }}">Register</a></li>
+            @else
+				<li class="dropdown">
+				  <a href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+				    <i class="glyphicon glyphicon-th"></i>
+				  </a>
+				  <ul class="dropdown-menu app-sel">
+				    <li>
+					    <a href="#">
+					    	<img src="https://git.shopex.cn/img/favicon.png" width="48px" />
+					    	<div>CRM</div>
+					    </a>
+				    </li>
+				    <li>
+					    <a href="">
+					    	<img src="https://git.shopex.cn/img/favicon.png" width="48px" />
+					    	<div>CRM</div>
+					    </a>
+				    </li>
+				    <li>
+					    <a href="">
+					    	<img src="https://git.shopex.cn/img/favicon.png" width="48px" />
+					    	<div>CRM</div>
+					    </a>
+				    </li>
+				    <li>
+					    <a href="">
+					    	<img src="https://git.shopex.cn/img/favicon.png" width="48px" />
+					    	<div>CRM</div>
+					    </a>
+				    </li>
+				  </ul>
+				</li>
 
-	     <ul class="nav navbar-nav navbar-right">
-	        <li class="dropdown">
-	          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
-	          <i class="glyphicon glyphicon-star"></i>
-	          </a>
-	          <ul class="dropdown-menu dropdown-menu-left">
-	            <li><a href="#">新增会员</a></li>
-	            <li><a href="#">Another action</a></li>
-	            <li><a href="#">Something else here</a></li>
-	            <li><a href="#">Separated link</a></li>
-	            <li role="separator" class="divider"></li>
-	            <li><a href="#">设置快捷菜单</a></li>
-	          </ul>
-	        </li>
-		  <form class="navbar-form navbar-right search-form">
-	        <div class="form-group">
-	          <input type="text" class="form-control" id="search-ipt" style="">
-		      <div id="search-panel" class="dropdown-menu">
-		      	<div class="search-opts">
-			      	<a href="">搜索手机号 <span class="search-value-mapper">asdfasfa</span></a>
-			      	<a href="">搜索用户名 <span class="search-value-mapper">asdfasfa</span></a>
-			      	<a href="">搜索会员卡号 <span class="search-value-mapper">asdfasfa</span></a>
-			      	<a href="">搜索地址库 <span class="search-value-mapper">asdfasfa</span></a>
-		      	</div>
-		      	<div class="search-panel-footer">
-		      		<a href=""><i class="glyphicon glyphicon-search"></i> 使用高级搜索</a>
-		      	</div>
-		      </div>
-	        </div>
-	      </form>
-	    </div>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+                        {{ Auth::user()->name }} <span class="caret"></span>
+                    </a>                
+                    <ul class="dropdown-menu" role="menu">
+                        <li>
+                            <a href="{{ route('logout') }}"
+                                onclick="event.preventDefault();
+                                         document.getElementById('logout-form').submit();">
+                                退出系统
+                            </a>
+
+                            <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+                                {{ csrf_field() }}
+                            </form>
+                        </li>
+                    </ul>
+                </li>
+            @endif
+	      </ul>
+	      @if (false==Auth::guest())
+	      @if ($searchbar)
+		  	<searchbar :items="searchbar"></searchbar>
+	      @endif
+        @endif
 	  </div>
 	</nav>
-
-	<script>
-	$(function(){
-		window._search_ipt_w = $('#search-ipt').width();
-		window._search_ipt_v = 0;
-
-		$('#search-panel').css('left', $('#search-ipt').position().left);
-
-		$('#search-ipt').on('focus', function(){
-			$('#navbar .hide-in-search').hide();
-			$('#search-ipt').select();
-			$('#search-ipt').animate({width: $('.container').width() / 2}, 300, function(){
-				$('#search-panel').css('top', $('#search-ipt').outerHeight());
-				$('#search-panel').width($('#search-ipt').outerWidth());
-				$('.search-value-mapper').html($('#search-ipt').val());
-				$('#search-panel').show();
-			});
-		})
-		$('#search-ipt').on('blur', function(){
-			window._search_ipt_v = 0;
-			$('#search-panel').hide();
-			$('#search-ipt').animate({width: window._search_ipt_w}, 300, function(){
-				$('#navbar .hide-in-search').show();
-			});
-		})
-		$('#search-ipt').on('keyup', function(){
-			window._search_ipt_v++;
-			setTimeout( 
-				(function(){
-					if(window._search_ipt_v == this.v){
-						$('.search-value-mapper').html($('#search-ipt').val());
-					}
-				}.bind({v: window._search_ipt_v})), 200);
-		})
-	})
-	</script>
 
     <div class="container main-content">
 		@yield('content')
     </div>
+
+    <script>
+    var searchbar = {!! json_encode($searchbar) !!};
+  	var app = new Vue({ 
+  		el: '#app-header',
+  		data: {
+  			searchbar: searchbar
+  		}
+  	});    
+    </script>
 </html>
