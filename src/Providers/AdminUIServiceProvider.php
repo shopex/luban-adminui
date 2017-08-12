@@ -13,14 +13,14 @@ class AdminUIServiceProvider extends ServiceProvider{
 
 	public function boot()
 	{
-	    $this->loadViewsFrom(__DIR__.'/../views', 'adminui');
+	    $this->loadViewsFrom(__DIR__.'/../../views', 'adminui');
 
 	    $this->publishes([
-	        __DIR__.'/../views' => base_path('resources/views/vendor/adminui'),
+	        __DIR__.'/../../views' => base_path('resources/views/vendor/adminui'),
 	    ]);
 
 	    $this->publishes([
-	        __DIR__.'/../assets' => base_path('resources/assets/vendor/adminui'),
+	        __DIR__.'/../../assets' => base_path('resources/assets/vendor/adminui'),
 	    ]);	    
 	}
 }
