@@ -60,11 +60,10 @@
 	        @endif
 	      </ul>
 
-	      <ul class="nav navbar-nav navbar-right">
             @if (Auth::guest())
-                <li><a href="{{ route('login') }}">Login</a></li>
-                <li><a href="{{ route('register') }}">Register</a></li>
-            @else
+			<a href="{{ url('/login') }}" type="button" class="btn btn-default navbar-btn navbar-right external">登陆系统</a>
+            @else			
+	      	<ul class="nav navbar-nav navbar-right">
 				<li class="dropdown">
 				  <a href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 				    <i class="glyphicon glyphicon-th"></i>
@@ -103,21 +102,19 @@
                     </a>                
                     <ul class="dropdown-menu" role="menu">
                         <li>
-                            <a href="{{ route('logout') }}"
+                            <a href="{{ url('/logout') }}"
                                 onclick="event.preventDefault();
                                          document.getElementById('logout-form').submit();">
                                 退出系统
                             </a>
 
-                            <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+                            <form id="logout-form" action="{{ url('/logout') }}" method="POST" style="display: none;">
                                 {{ csrf_field() }}
                             </form>
                         </li>
                     </ul>
                 </li>
-            @endif
 	      </ul>
-	      @if (false==Auth::guest())
 	      @if ($searchbar)
 		  	<searchbar :items="searchbar"></searchbar>
 	      @endif

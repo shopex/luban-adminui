@@ -1,5 +1,5 @@
 <?php
-namespace Shopex\AdminUI;
+namespace Shopex\AdminUI\Http\Middleware;
 
 use Closure;
 

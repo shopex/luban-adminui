@@ -1,8 +1,9 @@
 <?php
 
-namespace Shopex\AdminUI;
+namespace Shopex\AdminUI\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Shopex\AdminUI\Console\Command;
 
 class AdminUIServiceProvider extends ServiceProvider{
 
@@ -17,5 +18,9 @@ class AdminUIServiceProvider extends ServiceProvider{
 	    $this->publishes([
 	        __DIR__.'/../views' => base_path('resources/views/vendor/adminui'),
 	    ]);
+
+	    $this->publishes([
+	        __DIR__.'/../assets' => base_path('resources/assets/vendor/adminui'),
+	    ]);	    
 	}
 }

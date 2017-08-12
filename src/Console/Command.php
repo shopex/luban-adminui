@@ -1,5 +1,5 @@
 <?php
-namespace Shopex\AdminUI;
+namespace Shopex\AdminUI\Console;
 
 use Illuminate\Support\Facades\Artisan;
 
