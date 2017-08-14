@@ -17,10 +17,8 @@ class AdminUIServiceProvider extends ServiceProvider{
 
 	    $this->publishes([
 	        __DIR__.'/../../views' => base_path('resources/views/vendor/adminui'),
-	    ]);
-
-	    $this->publishes([
 	        __DIR__.'/../../assets' => base_path('resources/assets/vendor/adminui'),
-	    ]);	    
+	        __DIR__.'/../Migrate' => base_path('database/migrations'),
+	    ]);
 	}
 }

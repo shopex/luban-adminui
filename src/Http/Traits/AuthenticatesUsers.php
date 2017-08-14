@@ -4,49 +4,58 @@ namespace Shopex\AdminUI\Http\Traits;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use GuzzleHttp\Client as HttpClient;
+use Illuminate\Foundation\Auth\RedirectsUsers;
+use Shopex\AdminUI\Model\LoginSession;
+use Illuminate\Support\Facades\Session;
 
 trait AuthenticatesUsers
 {
+
+    use RedirectsUsers;
 
     /**
      * Show the application's login form.
      *
      * @return \Illuminate\Http\Response
      */
-    public function showLoginForm()
+    public function showLoginForm(Request $request)
     {
-        return 'redirect to saml';
+
+        $code = $request->get('code');
+        if($code){
+            $token_url = $this->get_sso_url('api/token', 'code='.$code);
+            $client = new HttpClient();
+            $res = $client->get($token_url);
+            if($res->getStatusCode() == 200){
+                $body = $res->getBody();
+                $oauth_info = json_decode($body);
+            }
+            if($this->attemptLogin($request, $oauth_info)){
+                return $this->sendLoginResponse($request);
+            }
+        }
+
+        $query = http_build_query(array(
+                'response_type'=>'code',
+                'app_id' => $this->app_id,
+                'redirect_uri'=> url('/login'),
+            ));
+
+        $login_url = $this->get_sso_url('login', $query);
+        return redirect($login_url);
     }
 
-    /**
-     * Handle a login request to the application.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\Response
-     */
-    public function login(Request $request)
-    {
-        $this->validateLogin($request);
-
-        // If the class is using the ThrottlesLogins trait, we can automatically throttle
-        // the login attempts for this application. We'll key this by the username and
-        // the IP address of the client making these requests into this application.
-        if ($this->hasTooManyLoginAttempts($request)) {
-            $this->fireLockoutEvent($request);
-
-            return $this->sendLockoutResponse($request);
+    private function get_sso_url($path, $query = ''){
+        $url = $this->sso_url;
+        if( $url[strlen($url)-1] != '/'){
+            $url.='/';
         }
-
-        if ($this->attemptLogin($request)) {
-            return $this->sendLoginResponse($request);
+        $url .= $path;
+        if($query){
+            $url .= '?'.$query;
         }
-
-        // If the login attempt was unsuccessful we will increment the number of attempts
-        // to login and redirect the user back to the login form. Of course, when this
-        // user surpasses their maximum number of attempts they will get locked out.
-        $this->incrementLoginAttempts($request);
-
-        return $this->sendFailedLoginResponse($request);
+        return $url;
     }
 
     /**
@@ -55,22 +64,44 @@ trait AuthenticatesUsers
      * @param  \Illuminate\Http\Request  $request
      * @return bool
      */
-    protected function attemptLogin(Request $request)
+    protected function attemptLogin(Request $request, $oauth_info)
     {
-        return $this->guard()->attempt(
-            $this->credentials($request), $request->has('remember')
-        );
+        $user = $this->guard()->getProvider()->retrieveById($oauth_info->user_id);
+        if(!$user){
+            $user = $this->autoCreateUserWhenLogin($oauth_info);
+        }
+
+        $this->guard()->login($user, false);
+
+        $login_sess = LoginSession::where('session_id', $request->session()->getId())->first();
+        if(!$login_sess){
+            $login_sess = new LoginSession;
+        }
+
+        $login_sess->sso_user_id = $oauth_info->user_id;
+        $login_sess->sso_logout_token = $oauth_info->logout_token;
+        $login_sess->session_id = $request->session()->getId();
+        $login_sess->save();
+        return true;
     }
 
-    /**
-     * Get the needed authorization credentials from the request.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return array
-     */
-    protected function credentials(Request $request)
-    {
-        return $request->only($this->username(), 'password');
+    protected function autoCreateUserWhenLogin($oauth_info){
+        $user = $this->guard()->getProvider()->createModel();
+        $identifierName = $user->getAuthIdentifierName();
+        foreach($oauth_info->user_info as $k=>$v){
+            $user->$k = $v;
+        }
+        $user->name = $oauth_info->user_name;
+        $user->sso_access_token = $oauth_info->access_token;
+        $user->sso_refresh_token = $oauth_info->refresh_token;
+        $user->$identifierName = $oauth_info->user_id;
+        $user->save();        
+
+        if($user->save()){
+            return $user;
+        }else{
+            return false;
+        }
     }
 
     /**
@@ -81,10 +112,6 @@ trait AuthenticatesUsers
      */
     protected function sendLoginResponse(Request $request)
     {
-        $request->session()->regenerate();
-
-        $this->clearLoginAttempts($request);
-
         return $this->authenticated($request, $this->guard()->user())
                 ?: redirect()->intended($this->redirectPath());
     }
@@ -102,35 +129,6 @@ trait AuthenticatesUsers
     }
 
     /**
-     * Get the failed login response instance.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    protected function sendFailedLoginResponse(Request $request)
-    {
-        $errors = [$this->username() => trans('auth.failed')];
-
-        if ($request->expectsJson()) {
-            return response()->json($errors, 422);
-        }
-
-        return redirect()->back()
-            ->withInput($request->only($this->username(), 'remember'))
-            ->withErrors($errors);
-    }
-
-    /**
-     * Get the login username to be used by the controller.
-     *
-     * @return string
-     */
-    public function username()
-    {
-        return 'email';
-    }
-
-    /**
      * Log the user out of the application.
      *
      * @param  \Illuminate\Http\Request  $request
@@ -138,10 +136,15 @@ trait AuthenticatesUsers
      */
     public function logout(Request $request)
     {
+        if($request->get('logout_token')){
+            $login_sess = LoginSession::where('sso_logout_token', $request->get('logout_token'))->first();
+            if($login_sess){
+                Session::getHandler()->destroy($login_sess->session_id);
+            }
+            return 'ok';
+        }
         $this->guard()->logout();
-
         $request->session()->invalidate();
-
         return redirect('/');
     }
 

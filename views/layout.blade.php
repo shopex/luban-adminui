@@ -25,11 +25,19 @@
 	    </div>
 	    <div id="navbar" class="navbar-collapse collapse">
 	      <ul class="nav navbar-nav hide-in-search">
-	      @if (Auth::guest())
-	      	@else
-
 	      	@foreach ($app_menus as $menu)
-	      	@if (isset($menu['items']) && count($menu['items']) > 0)
+
+	  		@if (Auth::guest())
+	  			@if (isset($menu['user-only']) and $menu['user-only'])
+	  				@continue;
+	  			@endif
+	  		@else
+	  			@if (isset($menu['guest-only']) and $menu['guest-only'])
+	  				@continue;
+	  			@endif
+	  		@endif
+
+	      	@if (isset($menu['items']) and count($menu['items']) > 0)
 	        <li class="dropdown">
 	          <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
 	          {{$menu['label']}} <span class="caret"></span></a>
@@ -56,8 +64,6 @@
 			<li><a href="{{ url($menu['link']) }}">{{$menu['label']}}</a></li>	        
 	        @endif
 			@endforeach
-
-	        @endif
 	      </ul>
 
             @if (Auth::guest())
@@ -115,7 +121,7 @@
                     </ul>
                 </li>
 	      </ul>
-	      @if ($searchbar)
+	      @if (isset($searchbar) and $searchbar)
 		  	<searchbar :items="searchbar"></searchbar>
 	      @endif
         @endif
@@ -127,7 +133,12 @@
     </div>
 
     <script>
+    @if (isset($searchbar) and $searchbar)
     var searchbar = {!! json_encode($searchbar) !!};
+    @else
+    var searchbar = [];
+    @endif;
+
   	var app = new Vue({ 
   		el: '#app-header',
   		data: {
