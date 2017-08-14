@@ -38,7 +38,7 @@ trait AuthenticatesUsers
 
         $query = http_build_query(array(
                 'response_type'=>'code',
-                'app_id' => $this->app_id,
+                'app_id' => $this->sso_app_id,
                 'redirect_uri'=> url('/login'),
             ));
 
@@ -47,6 +47,9 @@ trait AuthenticatesUsers
     }
 
     private function get_sso_url($path, $query = ''){
+        if($this->sso_url==''){
+            throw new \Exception('sso_url_is_error');
+        }
         $url = $this->sso_url;
         if( $url[strlen($url)-1] != '/'){
             $url.='/';
