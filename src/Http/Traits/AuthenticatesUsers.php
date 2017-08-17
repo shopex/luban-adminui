@@ -6,13 +6,24 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use GuzzleHttp\Client as HttpClient;
 use Illuminate\Foundation\Auth\RedirectsUsers;
-use Shopex\AdminUI\Model\LoginSession;
 use Illuminate\Support\Facades\Session;
+use Shopex\AdminUI\Model\LoginSession;
+use Shopex\Luban\Facades\LubanFacade as Luban;
 
 trait AuthenticatesUsers
 {
 
     use RedirectsUsers;
+
+    protected $sso_app_id;
+    protected $sso_app_secret;
+    protected $sso_url;    
+
+    private function load_config(){
+        $this->sso_app_id = Luban::config()->get("sso_app_id");
+        $this->sso_app_secret = Luban::config()->get("sso_app_secret");
+        $this->sso_url = Luban::config()->get("sso_url");
+    }
 
     /**
      * Show the application's login form.
@@ -21,7 +32,7 @@ trait AuthenticatesUsers
      */
     public function showLoginForm(Request $request)
     {
-
+        $this->load_config();
         $code = $request->get('code');
         if($code){
             $token_url = $this->get_sso_url('api/token', 'code='.$code);
@@ -39,6 +50,7 @@ trait AuthenticatesUsers
         $query = http_build_query(array(
                 'response_type'=>'code',
                 'app_id' => $this->sso_app_id,
+                'app_secret' => $this->sso_app_secret,
                 'redirect_uri'=> url('/login'),
             ));
 
@@ -146,9 +158,17 @@ trait AuthenticatesUsers
             }
             return 'ok';
         }
-        $this->guard()->logout();
+
+        $this->load_config();
+        $login_sess = LoginSession::where('session_id', $request->session()->getId())->first();
+        if($login_sess){
+            $logout_url = $this->get_sso_url('logout', 'redirect='.urlencode(url('/')).'&token='.$login_sess->sso_logout_token);
+        }
+
+        $this->guard()->logout();        
         $request->session()->invalidate();
-        return redirect('/');
+
+        return redirect($logout_url);
     }
 
     /**
